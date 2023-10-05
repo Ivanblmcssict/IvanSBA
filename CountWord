@@ -1,0 +1,97 @@
+program CountWordOccurrences;
+uses
+  SysUtils, StrUtils;
+
+function CountOccurrences(const word: string; const text: string): Integer;
+var
+  count: Integer;
+  position: Integer;
+begin
+  count := 0; //keep track of the number of occurrences
+  position := Pos(word, text);//store the current position in the text while searching for the word
+
+  while position > 0 do
+  begin
+    Inc(count);
+
+    position := PosEx(word, text, position + Length(word));
+    //move the position and search the next occurence
+
+  end;
+
+  Result := count;
+end;
+
+var
+  text: string;
+  counts: array[1..7] of Integer;
+  words: array[1..7] of string = ('important', 'For Example', 'show', 'difficult', 'However', 'Increase', 'decrease');
+  synonyms: array[1..7, 1..4] of string = (
+    ('crucial', 'vital', 'essential', 'significant'),
+    ('For Instance', 'As an example', 'To illustrate', 'To exemplify'),
+    ('demonstrate', 'present', 'reveal', 'exhibit'),
+    ('challenging', 'hard', 'tough', 'demanding'),
+    ('Yet', 'Nevertheless', 'Nonetheless', 'Still'),
+    ('Rise', 'Grow', 'Augment', 'Elevate'),
+    ('Reduce', 'Diminish', 'Lessen', 'Lower')
+  );
+  i: Integer;
+  inputFile: TextFile;
+  fileName: string;
+
+procedure ReadTextFromFile(const fileName: string; var text: string);
+var
+  inputFile: TextFile;
+  line: string;
+begin
+  AssignFile(inputFile, fileName);
+  Reset(inputFile);//back to the start of the file
+  text := '';
+
+  while not Eof(inputFile) do
+  begin
+    ReadLn(inputFile, line);
+    text := text + line + ' ';
+  end;
+
+  CloseFile(inputFile);
+end;
+
+
+  begin
+    WriteLn('Enter the file name :');
+    ReadLn(fileName);
+    AssignFile(inputFile, fileName);
+    ReadTextFromFile(fileName, text);
+
+  // Count occurrences
+  for i := 1 to 7 do
+    counts[i] := CountOccurrences(words[i], text);
+
+  // Output original text with highlight so that user can copy and paste it to the textfile
+  //it helps user to see where they should modify the writing clearly and change the repeated words
+  //to the vocabularies suggested by the program
+
+  WriteLn('Your original text with highlight: ');
+  for i := 1 to 7 do
+    text := StringReplace(text, words[i], '[' + (uppercase(words[i])) + ']', [rfReplaceAll, rfIgnoreCase]);
+  WriteLn(text);
+  WriteLn;
+
+  // Check repetition count and suggest synonyms
+  // If count doesnt exceed 2, the program won't write the occurence of the word for a faster execution speed
+  for i := 1 to 7 do
+  begin
+    if counts[i] > 2 then
+    begin
+      WriteLn('The word/phrase "', words[i], '" was used ', counts[i], ' times. Consider using these synonyms: ');
+      WriteLn(synonyms[i, 1] + ', ' + synonyms[i, 2] + ', ' + synonyms[i, 3] + ', ' + synonyms[i, 4]);
+      Assignfile(inputfile,'record.txt');
+      Append(inputfile);
+      WriteLn(inputfile,words[i],'is used:',counts[i]);
+      closefile(inputfile);
+    end;
+  end;
+
+  ReadLn;
+end.   

@@ -1,0 +1,102 @@
+program FleschIndexCalculator;
+uses
+  SysUtils;
+
+var
+  tf: TextFile;
+  wordCount, syllableCount, sentenceCount: integer;
+  currentChar, nextChar: char;
+  filename: string;
+  score: real;
+
+  function CountSyllables(word: string): integer;
+  var
+    i: integer;
+    syllableCount: integer;
+    prevChar, curChar: char;
+  begin
+    syllableCount := 0;
+    prevChar := ' ';
+    for i := 1 to Length(word) do
+    begin
+      curChar := word[i];
+
+      begin
+        if (curChar in ['a', 'e', 'i', 'o', 'u', 'y', 'A', 'E', 'I', 'O', 'U', 'Y']) then
+        inc(syllableCount);
+        begin
+          if not (prevChar in ['a', 'e', 'i', 'o', 'u', 'y', 'A', 'E', 'I', 'O', 'U', 'Y']) then
+            inc(syllableCount);
+        end;
+      end;
+
+    end;
+    // Adjust syllable count for silent 'e' at the end
+    if (syllableCount > 2) and (word[Length(word)] in ['e', 'E']) then
+      dec(syllableCount);
+    Result := syllableCount;
+  end;
+
+procedure RateReadability(score: real);
+begin
+  if score > 100 then
+    WriteLn('The English is too plain. It is kindergarten level English. You should try to use more advanced vocabularies and more complicated sentence structures.')
+  else if score > 90 then
+    WriteLn('The English is too plain. It is primary level English. You should try to use more advanced vocabularies and more complicated sentence structures.')
+  else if score > 80 then
+    WriteLn('The English level is junior form level. You should try to use more advanced vocabularies and more complicated sentence structures.')
+  else if score > 60 then
+    WriteLn('The English level is between junior form to senior form student.')
+  else if score > 50 then
+    WriteLn('The complexity of this writing is suitable.')
+  else
+    WriteLn('It is a bit too complicated. You should try using shorter sentences and less passive voice so that readers can understand your writing easier.');
+end;
+
+begin
+  wordCount := 0;
+  syllableCount := 0;
+  sentenceCount := 0;
+
+  Write('Enter the name of the text file: ');
+  ReadLn(filename);
+
+  AssignFile(tf, filename);
+  Reset(tf);
+
+  while not Eof(tf) do
+  begin
+    Read(tf, currentChar);
+    if (currentChar = ' ') then
+    begin
+      Read(tf, nextChar);
+      while (nextChar = ' ') and not Eof(tf) do
+        Read(tf, nextChar);
+      if nextChar <> ' ' then
+      begin
+        syllableCount := syllableCount + CountSyllables(nextChar);
+        inc(wordCount);
+      end;
+    end
+    else if (currentChar in ['.', '!', '?']) then
+      inc(sentenceCount);
+  end;
+
+  CloseFile(tf);
+
+  if sentenceCount = 0 then
+    score := 0
+  else
+    score := 206.835 - 1.015 * (wordCount / sentenceCount) - 84.6 * (syllableCount / wordCount);
+
+  WriteLn('Flesch Reading Ease Score: ', score:5:2);
+
+  RateReadability(score);
+
+  AssignFile(tf, 'record.txt');
+  Append(tf);
+  WriteLn(tf, 'Flesch Reading Ease Score: ', score:5:2);
+  CloseFile(tf);
+
+  ReadLn();
+end.   
